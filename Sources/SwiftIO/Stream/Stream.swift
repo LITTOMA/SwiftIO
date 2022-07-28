@@ -1,11 +1,10 @@
-import Fundation
+import Foundation
 
 enum SeekOrigin : Int32 {
     case begin = 0, current, end
 }
 
 protocol Stream {
-
     var canRead: Bool { get }
     var canSeek: Bool { get }
     var canTimeout: Bool { get }
@@ -22,8 +21,8 @@ protocol Stream {
     func copyToAsync(destination: Stream, bufferSize: Int32) async
     func flush()
     func flushAsync() async
-    func read(buffer: Data, offset: Int32, count: Int32) -> Int32
-    func readAsync(buffer: Data, offset: Int32, count: Int32) async -> Int32
+    func read(buffer: inout Data, offset: Int32, count: Int32) -> Int32
+    func readAsync(buffer: inout Data, offset: Int32, count: Int32) async -> Int32
     func readByte() -> UInt8
     func seek(offset: Int64, origin: Int32) -> Int64
     func setLength(length: Int64)
