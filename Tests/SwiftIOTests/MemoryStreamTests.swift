@@ -105,12 +105,22 @@ final class MemoryStreamTests: XCTestCase {
         XCTAssertEqual(stream.position, 5)
     }
 
-    func testMemoryStreamSetLength() throws {
+    func testMemoryStreamSetLengthTurncate() throws {
         let bytes = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09])
         let stream = MemoryStream(bytes: bytes)
         stream.setLength(length: 5)
         XCTAssertEqual(stream.length, 5)
         XCTAssertEqual(stream.position, 0)
+        XCTAssertEqual(stream.toData(), Data([0x00, 0x01, 0x02, 0x03, 0x04]))
+    }
+
+    func testMemoryStreamSetLengthExtend() throws {
+        let bytes = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09])
+        let stream = MemoryStream(bytes: bytes)
+        stream.setLength(length: 15)
+        XCTAssertEqual(stream.length, 15)
+        XCTAssertEqual(stream.position, 0)
+        XCTAssertEqual(stream.toData(), Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00]))
     }
 
     func testMemoryStreamWrite() throws {
