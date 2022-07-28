@@ -2,16 +2,16 @@ import Foundation
 
 class MemoryStream: Stream {
   var canRead: Bool {
-    return true
+    return !isClosed
   }
   var canSeek: Bool {
-    return true
+    return !isClosed
   }
   var canTimeout: Bool {
-    return true
+    return !isClosed
   }
   var canWrite: Bool {
-    return true
+    return !isClosed
   }
   var length: Int64
   var position: Int64
@@ -19,9 +19,26 @@ class MemoryStream: Stream {
   var writeTimeout: Int32
 
   private var bytes: Data
+  private var isClosed: Bool = false
+
+  init() {
+    self.bytes = Data()
+    self.length = 0
+    self.position = 0
+    self.readTimeout = 0
+    self.writeTimeout = 0
+  }
 
   init(bytes: Data) {
     self.bytes = bytes
+    self.length = Int64(bytes.count)
+    self.position = 0
+    self.readTimeout = 0
+    self.writeTimeout = 0
+  }
+
+  init(bytes: [UInt8]) {
+    self.bytes = Data(bytes)
     self.length = Int64(bytes.count)
     self.position = 0
     self.readTimeout = 0
@@ -32,6 +49,7 @@ class MemoryStream: Stream {
     self.bytes = Data()
     self.length = 0
     self.position = 0
+    self.isClosed = true
   }
 
   func copyTo(destination: Stream) {
@@ -105,18 +123,16 @@ class MemoryStream: Stream {
     return byte
   }
 
-  func seek(offset: Int64, origin: Int32) -> Int64 {
+  func seek(offset: Int64, origin: SeekOrigin) -> Int64 {
     let length = Int64(self.length)
     let position = Int64(self.position)
     switch origin {
-    case SeekOrigin.begin.rawValue:
+    case .begin:
       self.position = offset
-    case SeekOrigin.current.rawValue:
+    case .current:
       self.position = position + offset
-    case SeekOrigin.end.rawValue:
+    case .end:
       self.position = length + offset
-    default:
-      fatalError("Invalid origin")
     }
     return self.position
   }
@@ -128,13 +144,23 @@ class MemoryStream: Stream {
 
     let length = Int(length)
     let bytes = self.bytes
-    let count = bytes.count
-    if length > count {
-      let padding = Data(count: length - count)
-      self.bytes = bytes + padding
-    } else if length < count {
-      self.bytes = bytes[0..<length]
+    let currentLength = bytes.count
+    if length > currentLength {
+      let padding = Data(count: length - currentLength)
+      self.bytes.append(padding)
+    } else if length < currentLength {
+      self.bytes.removeLast(currentLength - length)
     }
+
+    self.length = Int64(self.bytes.count)
+  }
+
+  func toArray() -> [UInt8] {
+    return Array(self.bytes)
+  }
+
+  func toData() -> Data {
+    return self.bytes
   }
 
   func write(buffer: Data, offset: Int32, count: Int32) {
@@ -161,6 +187,9 @@ class MemoryStream: Stream {
         dest.copyMemory(from: src, byteCount: count)
       }
     }
+
+    self.position += Int64(count)
+    self.length = Int64(self.bytes.count)
   }
 
   func writeAsync(buffer: Data, offset: Int32, count: Int32) async {
@@ -169,7 +198,12 @@ class MemoryStream: Stream {
 
   func writeByte(byte: UInt8) {
     let position = Int(self.position)
-    self.bytes[position] = byte
+    if position >= self.bytes.count {
+      self.bytes.append(byte)
+    } else {
+      self.bytes[position] = byte
+    }
     self.position += 1
+    self.length = Int64(self.bytes.count)
   }
 }
