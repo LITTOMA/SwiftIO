@@ -24,7 +24,7 @@ protocol Stream {
     func read(buffer: inout Data, offset: Int32, count: Int32) -> Int32
     func readAsync(buffer: inout Data, offset: Int32, count: Int32) async -> Int32
     func readByte() -> UInt8
-    func seek(offset: Int64, origin: Int32) -> Int64
+    func seek(offset: Int64, origin: SeekOrigin) -> Int64
     func setLength(length: Int64)
     func write(buffer: Data, offset: Int32, count: Int32)
     func writeAsync(buffer: Data, offset: Int32, count: Int32) async
