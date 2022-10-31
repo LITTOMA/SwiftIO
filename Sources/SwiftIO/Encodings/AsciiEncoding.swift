@@ -17,4 +17,10 @@ class AsciiEncoding: Encoding {
         }
         return byteCount
     }
+    override func getMaxByteCount(_ charCount: Int) -> Int {
+        return charCount
+    }
+    override func getMaxCharCount(_ byteCount: Int) -> Int {
+        return byteCount
+    }
 }

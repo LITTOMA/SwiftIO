@@ -1,7 +1,7 @@
 import Foundation
 
 class Encoding {
-    // "Abstrac" functions
+    // "Abstract" functions
     func getByteCount(_ chars: [Character], index: Int, count: Int) -> Int {
         preconditionFailure("This method must be overridden")
     }
@@ -16,6 +16,14 @@ class Encoding {
 
     func getChars(_ bytes: [UInt8], byteIndex: Int, byteCount: Int, chars: inout [Character], charIndex: Int) -> Int {
         preconditionFailure("This method must be overridden")
+    }
+
+    func getMaxByteCount(_ charCount: Int) -> Int {
+        return charCount
+    }
+
+    func getMaxCharCount(_ byteCount: Int) -> Int {
+        return byteCount
     }
     // End of "abstract" functions
 
