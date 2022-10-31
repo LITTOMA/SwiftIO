@@ -67,6 +67,10 @@ class Encoding {
         return chars
     }
 
+    func getChars(_ bytes: [UInt8]) -> [Character] {
+        return self.getChars(bytes, index: 0, count: bytes.count)
+    }
+
     func getString(_ bytes: [UInt8], index: Int, count: Int) -> String {
         return String(self.getChars(bytes, index: index, count: count))
     }
