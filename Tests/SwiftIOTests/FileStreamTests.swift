@@ -69,4 +69,26 @@ class FileStreamTests: XCTestCase {
         // cleanup
         try! FileManager.default.removeItem(atPath: "test.txt")
     }
+
+    func testFileStreamCopyTo () {
+        let file = FileStream(path: "test.txt", mode: .createNew)
+        let bytes = [UInt8]("Hello, world!".utf8)
+        file.write(buffer: Data(bytes), offset: 0, count: Int32(bytes.count))
+        file.close()
+        let file2 = FileStream(path: "test.txt", mode: .open)
+        let file3 = FileStream(path: "test2.txt", mode: .createNew)
+        file2.copyTo(destination: file3)
+        file2.close()
+        file3.close()
+        let file4 = FileStream(path: "test2.txt", mode: .open)
+        var buffer = Data(count: 1024)
+        let bytesRead = file4.read(buffer: &buffer, offset: 0, count: 1024)
+        file4.close()
+        XCTAssertEqual(bytesRead, Int32(bytes.count))
+        XCTAssertEqual(buffer[0..<bytesRead], Data(bytes))
+
+        // cleanup
+        try! FileManager.default.removeItem(atPath: "test.txt")
+        try! FileManager.default.removeItem(atPath: "test2.txt")
+    }
 }

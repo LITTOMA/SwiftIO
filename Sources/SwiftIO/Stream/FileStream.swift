@@ -103,6 +103,7 @@ class FileStream: Stream {
 
     func copyTo(destination: Stream, bufferSize: Int32) {
         var buffer = Data(count: Int(bufferSize))
+        self.position = 0
 
         while true {
             let bytesRead = self.read(buffer: &buffer, offset: 0, count: bufferSize)
@@ -121,6 +122,7 @@ class FileStream: Stream {
 
     func copyToAsync(destination: Stream, bufferSize: Int32) async {
         var buffer = Data(count: Int(bufferSize))
+        self.position = 0
 
         while true {
             let bytesRead = await self.readAsync(buffer: &buffer, offset: 0, count: bufferSize)
@@ -143,6 +145,10 @@ class FileStream: Stream {
 
     func read(buffer: inout Data, offset: Int32, count: Int32) -> Int32 {
         let data = self.fileHandle.readData(ofLength: Int(count))
+        if data.count == 0 {
+            return 0
+        }
+
         buffer.replaceSubrange(Int(offset)..<Int(offset + count), with: data)
         return Int32(data.count)
     }
@@ -153,6 +159,10 @@ class FileStream: Stream {
 
     func readAsync(buffer: inout Data, offset: Int32, count: Int32) async -> Int32 {
         let data = self.fileHandle.readData(ofLength: Int(count))
+        if data.count == 0 {
+            return 0
+        }
+        
         buffer.replaceSubrange(Int(offset)..<Int(offset + count), with: data)
         return Int32(data.count)
     }
