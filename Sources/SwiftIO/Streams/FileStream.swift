@@ -1,10 +1,6 @@
 import Foundation
 
 class FileStream: Stream {
-    enum FileMode : Int32 {
-        case createNew = 1, create, open, openOrCreate, truncate, append
-    }
-
     var canRead: Bool {
         return !isClosed
     }

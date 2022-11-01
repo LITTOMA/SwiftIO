@@ -1,9 +1,5 @@
 import Foundation
 
-enum SeekOrigin : Int32 {
-    case begin = 0, current, end
-}
-
 protocol Stream {
     var canRead: Bool { get }
     var canSeek: Bool { get }
