@@ -19,11 +19,11 @@ class Encoding {
     }
 
     func getMaxByteCount(_ charCount: Int) -> Int {
-        return charCount
+        preconditionFailure("This method must be overridden")
     }
 
     func getMaxCharCount(_ byteCount: Int) -> Int {
-        return byteCount
+        preconditionFailure("This method must be overridden")
     }
     // End of "abstract" functions
 
