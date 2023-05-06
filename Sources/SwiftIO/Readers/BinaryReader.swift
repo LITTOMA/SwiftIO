@@ -6,9 +6,10 @@
     private var endianess: Endianess = .little
     private var encoding: Encoding = ASCIIEncoding()
 
-    init(stream: Stream, encoding: Encoding = ASCIIEncoding()) {
+    init(_ stream: Stream, encoding: Encoding = ASCIIEncoding(), endianess: Endianess = .little) {
         self.stream = stream
         self.encoding = encoding
+        self.endianess = endianess
     }
 
     func close() {
@@ -46,10 +47,16 @@
     }
 
     func readChars(_ count: Int, encoding: Encoding) -> [Character] {
-        let bytes = self.readBytes(encoding.getMaxByteCount(count))
-        let chars = encoding.getChars(Array(bytes))
-        self.stream.position -= Int64(bytes.count - encoding.getByteCount(chars))
-        return chars
+        let chars = [Character](repeating: " ", count: count)
+        var charsRead = 0
+        for i in 0..<count {
+            let char = self.readChar(encoding: encoding)
+            if char == "" {
+                break
+            }
+            chars[charsRead] = char
+            charsRead += 1
+        }
     }
 
     func readChars(_ count: Int) -> [Character] {
@@ -172,5 +179,18 @@
 
     func readString(format: BinaryStringFormat) -> String {
         return self.readString(format: format, encoding: self.encoding)
+    }
+
+    func readToEnd() -> Data {
+        var buffer = Data()
+        while true {
+            var chunk = Data(count: 4096)
+            let bytesRead = self.stream.read(buffer: &chunk, offset: 0, count: 4096)
+            if bytesRead == 0 {
+                break
+            }
+            buffer.append(chunk)
+        }
+        return buffer
     }
 }
