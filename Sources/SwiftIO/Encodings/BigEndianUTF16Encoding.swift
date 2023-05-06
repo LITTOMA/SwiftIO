@@ -25,6 +25,10 @@ class BigEndianUTF16Encoding : UTF16Encoding {
         return byteCount / 2
     }
 
+    override func getByteCount(_ char: Character) -> Int {
+        return 2
+    }
+
     override func getByteCount(_ chars: [Character], index: Int, count: Int) -> Int {
         return count * 2
     }

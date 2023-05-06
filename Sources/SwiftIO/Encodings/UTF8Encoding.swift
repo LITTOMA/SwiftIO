@@ -1,17 +1,23 @@
 class UTF8Encoding: Encoding {
+    override func getByteCount(_ char: Character) -> Int {
+        var byteCount = 0
+        if char <= "\u{7F}" {
+            byteCount += 1
+        } else if char <= "\u{7FF}" {
+            byteCount += 2
+        } else if char <= "\u{FFFF}" {
+            byteCount += 3
+        } else {
+            byteCount += 4
+        }
+        return byteCount
+    }
+
     override func getByteCount(_ chars: [Character], index: Int, count: Int) -> Int {
         var byteCount = 0
         for i in index..<index + count {
             let char = chars[i]
-            if char <= "\u{7F}" {
-                byteCount += 1
-            } else if char <= "\u{7FF}" {
-                byteCount += 2
-            } else if char <= "\u{FFFF}" {
-                byteCount += 3
-            } else {
-                byteCount += 4
-            }
+            byteCount += getByteCount(char)
         }
         return byteCount
     }

@@ -97,4 +97,14 @@ class BinaryReaderTests : XCTestCase {
         XCTAssertEqual(reader.readString(format: .zeroTerminated, encoding: .utf8), "abc")
         XCTAssertEqual(reader.readString(format: .zeroTerminated, encoding: .utf8), "defghijklmnopqrstuvwxyz")
     }
+
+    func testReadUtf8Char() {
+        let stream = MemoryStream(bytes: [0x61, 0xC3, 0xA9, 0x63, 0x64, 0x65])
+        let reader = BinaryReader(stream)
+        XCTAssertEqual(reader.readChar(encoding: .utf8), "a")
+        XCTAssertEqual(reader.readChar(encoding: .utf8), "é")
+        XCTAssertEqual(reader.readChar(encoding: .utf8), "c")
+        XCTAssertEqual(reader.readChar(encoding: .utf8), "d")
+        XCTAssertEqual(reader.readChar(encoding: .utf8), "e")
+    }
 }

@@ -36,10 +36,21 @@
     }
 
     func readChar(encoding: Encoding) -> Character {
-        let bytes = self.readBytes(encoding.getMaxByteCount(1))
+        // if stream reaches end, return null character
+        if self.stream.position == self.stream.length {
+            return "\0"
+        }
+
+        var maxBytes = encoding.getMaxByteCount(1)
+        if Int64(maxBytes) + self.stream.position > self.stream.length {
+            maxBytes = Int(self.stream.length - self.stream.position)
+        }
+
+        let bytes = self.readBytes(maxBytes)
         let chars = encoding.getChars(Array(bytes))
-        self.stream.position -= Int64(bytes.count - encoding.getByteCount(chars))
-        return chars[0]
+        let char = chars[0]
+        self.stream.position -= Int64(bytes.count - encoding.getByteCount(char))
+        return char
     }
 
     func readChar() -> Character {
@@ -47,16 +58,14 @@
     }
 
     func readChars(_ count: Int, encoding: Encoding) -> [Character] {
-        let chars = [Character](repeating: " ", count: count)
+        var chars = [Character](repeating: " ", count: count)
         var charsRead = 0
         for i in 0..<count {
             let char = self.readChar(encoding: encoding)
-            if char == "" {
-                break
-            }
-            chars[charsRead] = char
+            chars[i] = char
             charsRead += 1
         }
+        return chars
     }
 
     func readChars(_ count: Int) -> [Character] {

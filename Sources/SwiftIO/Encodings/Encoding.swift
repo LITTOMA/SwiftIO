@@ -2,6 +2,10 @@ import Foundation
 
 class Encoding {
     // "Abstract" functions
+    func getByteCount(_ char: Character) -> Int {
+        preconditionFailure("This method must be overridden")
+    }
+
     func getByteCount(_ chars: [Character], index: Int, count: Int) -> Int {
         preconditionFailure("This method must be overridden")
     }

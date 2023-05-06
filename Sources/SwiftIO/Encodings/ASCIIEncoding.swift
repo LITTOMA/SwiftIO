@@ -1,4 +1,8 @@
 class ASCIIEncoding: Encoding {
+    override func getByteCount(_ char: Character) -> Int {
+        return 1
+    }
+
     override func getByteCount(_ chars: [Character], index: Int, count: Int) -> Int {
         return count
     }
