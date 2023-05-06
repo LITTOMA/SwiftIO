@@ -27,6 +27,13 @@ class Encoding {
     }
     // End of "abstract" functions
 
+    // Static members
+    static let ascii = ASCIIEncoding()
+    static let utf8 = UTF8Encoding()
+    static let utf16 = UTF16Encoding()
+    static let utf16be = BigEndianUTF16Encoding()
+    // End of static members
+
     func getByteCount(_ chars: [Character]) -> Int {
         return self.getByteCount(chars, index: 0, count: chars.count)
     }
