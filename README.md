@@ -46,52 +46,37 @@ Examples
 
 Here are a few examples to demonstrate how to use SwiftIO:
 
-**Reading from a file using FileStream:**
+### BinaryPrimitives
+
+The `BinaryPrimitives` interface in SwiftIO provides methods for reading and writing basic data types in binary form. Let's take a look at a couple of test cases as examples:
+
+**Reading a double value in big-endian format:**
 
 ```swift
 import SwiftIO
 
-let fileStream = try FileStream(path: "path/to/file.txt", mode: .read)
-let data = try fileStream.read()
-print(data)
-fileStream.close()
+let bytes: [UInt8] = [0x3F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+let data = Data(bytes)
+let value = BinaryPrimitives.readDoubleBigEndian(from: data)
+print(value) // Output: 1.0
 ```
 
-**Writing to a file using FileStream:**
+In this example, we have a byte array representing a double value in big-endian format. We convert it to a `Data` object and use the `readDoubleBigEndian` method from `BinaryPrimitives` to read the value. The resulting `value` will be 1.0.
+
+**Reading a double value in little-endian format:**
 
 ```swift
 import SwiftIO
 
-let fileStream = try FileStream(path: "path/to/file.txt", mode: .write)
-let data = "Hello, SwiftIO!"
-try fileStream.write(data)
-fileStream.close()
+let bytes: [UInt8] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F]
+let data = Data(bytes)
+let value = BinaryPrimitives.readDoubleLittleEndian(from: data)
+print(value) // Output: 1.0
 ```
 
-**Reading from a byte array using MemoryStream:**
+Similarly, in this example, we have a byte array representing a double value in little-endian format. We convert it to a `Data` object and use the `readDoubleLittleEndian` method from `BinaryPrimitives` to read the value. The resulting `value` will also be 1.0.
 
-```swift
-import SwiftIO
-
-let byteArray: [UInt8] = [0x48, 0x65, 0x6c, 0x6c, 0x6f] // Hello
-let memoryStream = try MemoryStream(data: byteArray)
-let data = try memoryStream.read()
-print(data)
-memoryStream.close()
-```
-
-**Writing to a byte array using MemoryStream:**
-
-```swift
-import SwiftIO
-
-var byteArray: [UInt8] = []
-let memoryStream = try MemoryStream(data: &byteArray)
-let data = "Hello, SwiftIO!".data(using: .utf8)!
-try memoryStream.write(data)
-memoryStream.close()
-print(byteArray)
-```
+Please note that in your actual code, you may need to import the SwiftIO module and adapt the test cases based on your specific requirements.
 
 For more detailed examples and usage instructions, please refer to the [documentation](https://github.com/LITTOMA/SwiftIO/wiki).
 
