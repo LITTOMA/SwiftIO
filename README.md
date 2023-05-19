@@ -76,6 +76,46 @@ print(value) // Output: 1.0
 
 Similarly, in this example, we have a byte array representing a double value in little-endian format. We convert it to a `Data` object and use the `readDoubleLittleEndian` method from `BinaryPrimitives` to read the value. The resulting `value` will also be 1.0.
 
+### Binary Reader
+
+The `BinaryReader` class in SwiftIO provides functionality for reading binary data. Let's take a look at a couple of test cases as examples:
+
+**Reading Int16 values in big-endian format:**
+
+```swift
+import SwiftIO
+
+let stream = MemoryStream(bytes: [0x01, 0x02, 0x03, 0x04, 0xFF, 0xFF])
+let reader = BinaryReader(stream)
+let value1 = reader.readInt16()
+let value2 = reader.readInt16()
+let value3 = reader.readInt16()
+
+print(value1) // Output: 513
+print(value2) // Output: 1027
+print(value3) // Output: -1
+```
+
+In this example, we create a `MemoryStream` object with a byte array containing the binary data. We then create a `BinaryReader` instance with the stream. We use the `readInt16` method of the reader to read three Int16 values from the stream. The resulting values will be printed as output.
+
+**Reading Int16 values in little-endian format:**
+
+```swift
+import SwiftIO
+
+let stream = MemoryStream(bytes: [0x01, 0x02, 0x03, 0x04, 0xFF, 0xFF])
+let reader = BinaryReader(stream, endianess: .little)
+let value1 = reader.readInt16()
+let value2 = reader.readInt16()
+let value3 = reader.readInt16()
+
+print(value1) // Output: 258
+print(value2) // Output: 772
+print(value3) // Output: -1
+```
+
+Similarly, in this example, we create a `MemoryStream` object with a byte array containing the binary data. We then create a `BinaryReader` instance with the stream, specifying the little-endian format. We use the `readInt16` method of the reader to read three Int16 values from the stream in little-endian format. The resulting values will be printed as output.
+
 Please note that in your actual code, you may need to import the SwiftIO module and adapt the test cases based on your specific requirements.
 
 For more detailed examples and usage instructions, please refer to the [documentation](https://github.com/LITTOMA/SwiftIO/wiki).
