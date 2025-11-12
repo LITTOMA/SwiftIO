@@ -1,21 +1,41 @@
 import Foundation
 
+/// A stream whose backing store is memory, similar to .NET's MemoryStream class.
+///
+/// MemoryStream creates a stream whose backing store is memory. It provides methods for reading from
+/// and writing to a resizable array of bytes. This is useful for working with data in memory without
+/// needing to use files or other I/O resources.
 public class MemoryStream: Stream {
+  /// Indicates whether the stream supports reading.
   public var canRead: Bool {
     return !isClosed
   }
+  
+  /// Indicates whether the stream supports seeking.
   public var canSeek: Bool {
     return !isClosed
   }
+  
+  /// Indicates whether the stream can time out.
   public var canTimeout: Bool {
     return !isClosed
   }
+  
+  /// Indicates whether the stream supports writing.
   public var canWrite: Bool {
     return !isClosed
   }
+  
+  /// Gets or sets the length in bytes of the stream.
   public var length: Int
+  
+  /// Gets or sets the position within the stream.
   public var position: Int
+  
+  /// Gets or sets a value that determines how long the stream will attempt to read before timing out.
   public var readTimeout: Int
+  
+  /// Gets or sets a value that determines how long the stream will attempt to write before timing out.
   public var writeTimeout: Int
 
   private var bytes: Data
@@ -27,7 +47,8 @@ public class MemoryStream: Stream {
     }
   }
 
-  init() {
+  /// Initializes a new instance of the MemoryStream class with an expandable capacity initialized to zero.
+  public init() {
     self.bytes = Data()
     self.length = 0
     self.position = 0
@@ -35,7 +56,9 @@ public class MemoryStream: Stream {
     self.writeTimeout = 0
   }
 
-  init(bytes: Data) {
+  /// Initializes a new instance of the MemoryStream class based on the specified byte array.
+  /// - Parameter bytes: The array of unsigned bytes from which to create the stream.
+  public init(bytes: Data) {
     self.bytes = bytes
     self.length = bytes.count
     self.position = 0
@@ -43,7 +66,9 @@ public class MemoryStream: Stream {
     self.writeTimeout = 0
   }
 
-  init(bytes: [UInt8]) {
+  /// Initializes a new instance of the MemoryStream class based on the specified byte array.
+  /// - Parameter bytes: The array of unsigned bytes from which to create the stream.
+  public init(bytes: [UInt8]) {
     self.bytes = Data(bytes)
     self.length = bytes.count
     self.position = 0
@@ -51,6 +76,7 @@ public class MemoryStream: Stream {
     self.writeTimeout = 0
   }
 
+  /// Closes the stream and releases any resources associated with it.
   public func close() {
     self.bytes = Data()
     self.length = 0

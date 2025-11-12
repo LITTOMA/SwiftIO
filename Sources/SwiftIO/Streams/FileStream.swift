@@ -1,20 +1,35 @@
 import Foundation
 
+/// A stream for reading from and writing to files, similar to .NET's FileStream class.
+///
+/// FileStream provides a Stream for a file, supporting both synchronous and asynchronous read and write operations.
+/// It uses the underlying FileHandle for file operations and provides a familiar interface for .NET developers.
 public class FileStream: Stream {
+    /// Indicates whether the stream supports reading.
     public var canRead: Bool {
         return !isClosed
     }
+    
+    /// Indicates whether the stream supports seeking.
     public var canSeek: Bool {
         return !isClosed
     }
+    
+    /// Indicates whether the stream can time out.
     public var canTimeout: Bool {
         return !isClosed
     }
+    
+    /// Indicates whether the stream supports writing.
     public var canWrite: Bool {
         return !isClosed
     }
+    
     private var cachedLength: Int?
     
+    /// Gets the length in bytes of the stream.
+    ///
+    /// The length is cached for performance. The cache is invalidated when the file is written to or truncated.
     public var length: Int {
         if let cached = cachedLength {
             return cached
@@ -25,6 +40,8 @@ public class FileStream: Stream {
         cachedLength = length
         return length
     }
+    
+    /// Gets or sets the position within the stream.
     public var position: Int {
         get {
             return Int(fileHandle.offsetInFile)
@@ -33,7 +50,11 @@ public class FileStream: Stream {
             fileHandle.seek(toFileOffset: UInt64(newValue))
         }
     }
+    
+    /// Gets or sets a value that determines how long the stream will attempt to read before timing out.
     public var readTimeout: Int
+    
+    /// Gets or sets a value that determines how long the stream will attempt to write before timing out.
     public var writeTimeout: Int
 
     private var fileHandle: FileHandle
@@ -45,6 +66,11 @@ public class FileStream: Stream {
         }
     }
 
+    /// Initializes a new instance of the FileStream class for the specified file path and mode.
+    /// - Parameters:
+    ///   - path: A relative or absolute path for the file that the FileStream will encapsulate.
+    ///   - mode: A constant that determines how to open or create the file.
+    /// - Throws: `SwiftIOError.fileNotFound` if the file doesn't exist and mode requires it, or other `SwiftIOError` if an I/O error occurs.
     public init(path: String, mode: FileMode) throws {
         if mode == .createNew {
             FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
@@ -97,6 +123,8 @@ public class FileStream: Stream {
         }
     }
 
+    /// Initializes a new instance of the FileStream class for the specified file handle.
+    /// - Parameter fileHandle: The FileHandle object to use for file operations.
     init(fileHandle: FileHandle) {
         self.fileHandle = fileHandle
         self.readTimeout = 0

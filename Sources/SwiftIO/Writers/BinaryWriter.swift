@@ -1,24 +1,27 @@
 import Foundation
 
-/// A class for writing binary data to a stream
+/// Writes primitive types in binary to a stream and supports writing strings in a specific encoding, similar to .NET's BinaryWriter class.
+///
+/// BinaryWriter provides methods that simplify writing primitive data types to a stream. It supports
+/// different encodings for character data and different byte orders (endianness) for multi-byte values.
 public class BinaryWriter {
     private var stream: Stream
     private var isClosed: Bool = false
     private var endianess: Endianess = .little
     private var encoding: Encoding = ASCIIEncoding()
 
-    /// Initializes a new instance of BinaryWriter
+    /// Initializes a new instance of the BinaryWriter class based on the specified stream and using ASCII encoding.
     /// - Parameters:
-    ///   - stream: The stream to write to
-    ///   - encoding: The encoding to use for string operations (default: ASCII)
-    ///   - endianess: The byte order to use (default: little-endian)
+    ///   - stream: The output stream.
+    ///   - encoding: The character encoding to use. If nil, defaults to ASCII encoding.
+    ///   - endianess: The byte order to use when writing multi-byte values. Defaults to little-endian.
     public init(_ stream: Stream, encoding: Encoding? = nil, endianess: Endianess = .little) {
         self.stream = stream
         self.encoding = encoding ?? ASCIIEncoding()
         self.endianess = endianess
     }
 
-    /// Closes the writer and underlying stream
+    /// Closes the current writer and the underlying stream.
     public func close() {
         if !isClosed {
             self.stream.close()
@@ -26,8 +29,9 @@ public class BinaryWriter {
         }
     }
 
-    /// Writes a single byte to the stream
-    /// - Parameter value: The byte value to write
+    /// Writes an unsigned byte to the current stream and advances the stream position by one byte.
+    /// - Parameter value: The unsigned byte to write.
+    /// - Throws: `SwiftIOError.streamClosed` if the stream is closed, or other `SwiftIOError` if an I/O error occurs.
     public func writeByte(_ value: UInt8) throws {
         guard !isClosed else {
             throw SwiftIOError.streamClosed
@@ -35,8 +39,9 @@ public class BinaryWriter {
         try stream.writeByte(byte: value)
     }
 
-    /// Writes a sequence of bytes to the stream
-    /// - Parameter bytes: The bytes to write
+    /// Writes a byte array to the underlying stream.
+    /// - Parameter bytes: A byte array containing the data to write.
+    /// - Throws: `SwiftIOError.streamClosed` if the stream is closed, or other `SwiftIOError` if an I/O error occurs.
     public func writeBytes(_ bytes: Data) throws {
         guard !isClosed else {
             throw SwiftIOError.streamClosed
@@ -44,8 +49,9 @@ public class BinaryWriter {
         try stream.write(buffer: bytes, offset: 0, count: bytes.count)
     }
 
-    /// Writes a sequence of bytes to the stream
-    /// - Parameter bytes: The bytes to write as an array
+    /// Writes a byte array to the underlying stream.
+    /// - Parameter bytes: A byte array containing the data to write.
+    /// - Throws: `SwiftIOError.streamClosed` if the stream is closed, or other `SwiftIOError` if an I/O error occurs.
     public func writeBytes(_ bytes: [UInt8]) throws {
         try writeBytes(Data(bytes))
     }
