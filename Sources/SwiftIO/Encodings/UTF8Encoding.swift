@@ -1,4 +1,9 @@
+/// Represents a UTF-8 encoding of Unicode characters, similar to .NET's UTF8Encoding class.
+///
+/// UTF8Encoding encodes Unicode characters using the UTF-8 encoding. UTF-8 represents each Unicode code point
+/// using one to four bytes, with ASCII characters (U+0000 to U+007F) encoded as single bytes.
 public class UTF8Encoding: Encoding {
+    /// Initializes a new instance of the UTF8Encoding class.
     public override init() {
         super.init()
     }

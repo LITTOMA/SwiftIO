@@ -1,4 +1,9 @@
+/// Represents a UTF-16 encoding of Unicode characters using little-endian byte order, similar to .NET's UnicodeEncoding class.
+///
+/// UTF16Encoding encodes Unicode characters using the UTF-16 encoding with little-endian byte order.
+/// Each Unicode code point is represented as one or two 16-bit values (surrogates for characters above U+FFFF).
 public class UTF16Encoding : Encoding {
+    /// Initializes a new instance of the UTF16Encoding class.
     public override init() {
         super.init()
     }

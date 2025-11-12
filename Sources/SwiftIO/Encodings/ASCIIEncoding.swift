@@ -1,4 +1,9 @@
+/// Represents an ASCII character encoding of Unicode characters, similar to .NET's ASCIIEncoding class.
+///
+/// ASCIIEncoding encodes Unicode characters as single 7-bit ASCII characters. Characters with Unicode values
+/// greater than U+007F are converted to the ASCII question mark ("?") character.
 public class ASCIIEncoding: Encoding {
+    /// Initializes a new instance of the ASCIIEncoding class.
     public override init() {
         super.init()
     }

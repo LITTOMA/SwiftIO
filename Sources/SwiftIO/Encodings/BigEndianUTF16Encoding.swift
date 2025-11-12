@@ -1,4 +1,9 @@
+/// Represents a UTF-16 encoding of Unicode characters using big-endian byte order.
+///
+/// BigEndianUTF16Encoding encodes Unicode characters using the UTF-16 encoding with big-endian byte order.
+/// This is the same as UTF16Encoding but with the byte order reversed.
 public class BigEndianUTF16Encoding : UTF16Encoding {
+    /// Initializes a new instance of the BigEndianUTF16Encoding class.
     public override init() {
         super.init()
     }
