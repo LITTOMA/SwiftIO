@@ -1,4 +1,7 @@
-class BigEndianUTF16Encoding : UTF16Encoding {
+public class BigEndianUTF16Encoding : UTF16Encoding {
+    public override init() {
+        super.init()
+    }
     override func getBytes(_ chars: [Character], charIndex: Int, charCount: Int, bytes: inout [UInt8], byteIndex: Int) -> Int {
         for i in 0..<charCount {
             let char = chars[charIndex + i]

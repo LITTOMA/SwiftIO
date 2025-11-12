@@ -1,6 +1,6 @@
 import Foundation
 
-class Encoding {
+public class Encoding {
     // "Abstract" functions
     func getByteCount(_ char: Character) -> Int {
         preconditionFailure("This method must be overridden")
@@ -32,10 +32,10 @@ class Encoding {
     // End of "abstract" functions
 
     // Static members
-    static let ascii = ASCIIEncoding()
-    static let utf8 = UTF8Encoding()
-    static let utf16 = UTF16Encoding()
-    static let utf16be = BigEndianUTF16Encoding()
+    public static let ascii = ASCIIEncoding()
+    public static let utf8 = UTF8Encoding()
+    public static let utf16 = UTF16Encoding()
+    public static let utf16be = BigEndianUTF16Encoding()
     // End of static members
 
     func getByteCount(_ chars: [Character]) -> Int {

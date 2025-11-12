@@ -1,39 +1,51 @@
 import Foundation
 
-class FileStream: Stream {
-    var canRead: Bool {
+public class FileStream: Stream {
+    public var canRead: Bool {
         return !isClosed
     }
-    var canSeek: Bool {
+    public var canSeek: Bool {
         return !isClosed
     }
-    var canTimeout: Bool {
+    public var canTimeout: Bool {
         return !isClosed
     }
-    var canWrite: Bool {
+    public var canWrite: Bool {
         return !isClosed
     }
-    var length: Int64 {
+    private var cachedLength: Int?
+    
+    public var length: Int {
+        if let cached = cachedLength {
+            return cached
+        }
         let currentOffset = self.position
-        let length = Int64(fileHandle.seekToEndOfFile())
+        let length = Int(fileHandle.seekToEndOfFile())
         self.position = currentOffset
+        cachedLength = length
         return length
     }
-    var position: Int64 {
+    public var position: Int {
         get {
-            return Int64(fileHandle.offsetInFile)
+            return Int(fileHandle.offsetInFile)
         }
         set {
             fileHandle.seek(toFileOffset: UInt64(newValue))
         }
     }
-    var readTimeout: Int32
-    var writeTimeout: Int32
+    public var readTimeout: Int
+    public var writeTimeout: Int
 
     private var fileHandle: FileHandle
     private var isClosed: Bool = false
+    
+    deinit {
+        if !isClosed {
+            close()
+        }
+    }
 
-    init(path: String, mode: FileMode) {
+    public init(path: String, mode: FileMode) throws {
         if mode == .createNew {
             FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
         } else if mode == .create {
@@ -42,7 +54,7 @@ class FileStream: Stream {
             }
         } else if mode == .open {
             if !FileManager.default.fileExists(atPath: path) {
-                fatalError("File does not exist")
+                throw SwiftIOError.fileNotFound(path)
             }
         } else if mode == .openOrCreate {
             if !FileManager.default.fileExists(atPath: path) {
@@ -62,7 +74,10 @@ class FileStream: Stream {
             }
         }
 
-        self.fileHandle = FileHandle(forUpdatingAtPath: path)!
+        guard let fileHandle = FileHandle(forUpdatingAtPath: path) else {
+            throw SwiftIOError.fileNotFound(path)
+        }
+        self.fileHandle = fileHandle
         self.readTimeout = 0
         self.writeTimeout = 0
 
@@ -88,82 +103,107 @@ class FileStream: Stream {
         self.writeTimeout = 0
     }
 
-    func close() {
-        self.fileHandle.closeFile()
-        self.isClosed = true
+    public func close() {
+        if !isClosed {
+            self.fileHandle.closeFile()
+            self.isClosed = true
+            cachedLength = nil
+        }
     }
 
-    func copyTo(destination: Stream) {
-        self.copyTo(destination: destination, bufferSize: 4096)
+    public func copyTo(destination: Stream) throws {
+        try self.copyTo(destination: destination, bufferSize: 4096)
     }
 
-    func copyTo(destination: Stream, bufferSize: Int32) {
-        var buffer = Data(count: Int(bufferSize))
+    public func copyTo(destination: Stream, bufferSize: Int) throws {
+        var buffer = Data(count: bufferSize)
         self.position = 0
 
         while true {
-            let bytesRead = self.read(buffer: &buffer, offset: 0, count: bufferSize)
+            let bytesRead = try self.read(buffer: &buffer, offset: 0, count: bufferSize)
 
             if bytesRead == 0 {
                 break
             }
 
-            destination.write(buffer: buffer, offset: 0, count: bytesRead)
+            try destination.write(buffer: buffer, offset: 0, count: bytesRead)
         }
     }
 
-    func copyToAsync(destination: Stream) async {
-        await self.copyToAsync(destination: destination, bufferSize: 4096)
+    public func copyToAsync(destination: Stream) async throws {
+        try await self.copyToAsync(destination: destination, bufferSize: 4096)
     }
 
-    func copyToAsync(destination: Stream, bufferSize: Int32) async {
-        var buffer = Data(count: Int(bufferSize))
+    public func copyToAsync(destination: Stream, bufferSize: Int) async throws {
+        var buffer = Data(count: bufferSize)
         self.position = 0
 
         while true {
-            let bytesRead = await self.readAsync(buffer: &buffer, offset: 0, count: bufferSize)
+            let bytesRead = try await self.readAsync(buffer: &buffer, offset: 0, count: bufferSize)
 
             if bytesRead == 0 {
                 break
             }
 
-            await destination.writeAsync(buffer: buffer, offset: 0, count: bytesRead)
+            try await destination.writeAsync(buffer: buffer, offset: 0, count: bytesRead)
         }
     }
 
-    func flush() {
+    public func flush() throws {
         self.fileHandle.synchronizeFile()
     }
 
-    func flushAsync() async {
+    public func flushAsync() async throws {
         self.fileHandle.synchronizeFile()
     }
 
-    func read(buffer: inout Data, offset: Int32, count: Int32) -> Int32 {
-        let data = self.fileHandle.readData(ofLength: Int(count))
+    public func read(buffer: inout Data, offset: Int, count: Int) throws -> Int {
+        if offset < 0 || count < 0 || offset + count > buffer.count {
+            throw SwiftIOError.invalidOperation("Invalid offset or count: offset=\(offset), count=\(count), buffer.count=\(buffer.count)")
+        }
+        if isClosed {
+            throw SwiftIOError.streamClosed
+        }
+        let data = self.fileHandle.readData(ofLength: count)
         if data.count == 0 {
             return 0
         }
-
-        buffer.replaceSubrange(Int(offset)..<Int(offset + count), with: data)
-        return Int32(data.count)
+        let actualCount = min(data.count, buffer.count - offset)
+        buffer.replaceSubrange(offset..<offset + actualCount, with: data.prefix(actualCount))
+        return actualCount
     }
 
-    func readByte() -> UInt8 {
-        return self.fileHandle.readData(ofLength: 1)[0]
+    public func readByte() throws -> UInt8 {
+        if isClosed {
+            throw SwiftIOError.streamClosed
+        }
+        let data = self.fileHandle.readData(ofLength: 1)
+        if data.count == 0 {
+            throw SwiftIOError.endOfStream
+        }
+        return data[0]
     }
 
-    func readAsync(buffer: inout Data, offset: Int32, count: Int32) async -> Int32 {
-        let data = self.fileHandle.readData(ofLength: Int(count))
+    public func readAsync(buffer: inout Data, offset: Int, count: Int) async throws -> Int {
+        if offset < 0 || count < 0 || offset + count > buffer.count {
+            throw SwiftIOError.invalidOperation("Invalid offset or count: offset=\(offset), count=\(count), buffer.count=\(buffer.count)")
+        }
+        if isClosed {
+            throw SwiftIOError.streamClosed
+        }
+        let data = self.fileHandle.readData(ofLength: count)
         if data.count == 0 {
             return 0
         }
-        
-        buffer.replaceSubrange(Int(offset)..<Int(offset + count), with: data)
-        return Int32(data.count)
+        let actualCount = min(data.count, buffer.count - offset)
+        buffer.replaceSubrange(offset..<offset + actualCount, with: data.prefix(actualCount))
+        return actualCount
     }
 
-    func seek(offset: Int64, origin: SeekOrigin) -> Int64 {
+    public func seek(offset: Int, origin: SeekOrigin) throws -> Int {
+        if isClosed {
+            throw SwiftIOError.streamClosed
+        }
         switch origin {
         case .begin:
             self.position = offset
@@ -176,19 +216,47 @@ class FileStream: Stream {
         return self.position
     }
 
-    func setLength(length: Int64) {
+    public func setLength(length: Int) throws {
+        if isClosed {
+            throw SwiftIOError.streamClosed
+        }
+        if length < 0 {
+            throw SwiftIOError.invalidOperation("Invalid length: \(length)")
+        }
         self.fileHandle.truncateFile(atOffset: UInt64(length))
+        cachedLength = length
     }
 
-    func write(buffer: Data, offset: Int32, count: Int32) {
-        self.fileHandle.write(buffer.subdata(in: Int(offset)..<Int(offset + count)))
+    public func write(buffer: Data, offset: Int, count: Int) throws {
+        if offset < 0 || count < 0 || offset + count > buffer.count {
+            throw SwiftIOError.invalidOperation("Invalid offset or count: offset=\(offset), count=\(count), buffer.count=\(buffer.count)")
+        }
+        if isClosed {
+            throw SwiftIOError.streamClosed
+        }
+        self.fileHandle.write(buffer.subdata(in: offset..<offset + count))
+        // Invalidate cache as file size may have changed
+        cachedLength = nil
     }
 
-    func writeAsync(buffer: Data, offset: Int32, count: Int32) async {
-        self.fileHandle.write(buffer.subdata(in: Int(offset)..<Int(offset + count)))
+    public func writeAsync(buffer: Data, offset: Int, count: Int) async throws {
+        if offset < 0 || count < 0 || offset + count > buffer.count {
+            throw SwiftIOError.invalidOperation("Invalid offset or count: offset=\(offset), count=\(count), buffer.count=\(buffer.count)")
+        }
+        if isClosed {
+            throw SwiftIOError.streamClosed
+        }
+        self.fileHandle.write(buffer.subdata(in: offset..<offset + count))
+        // Invalidate cache as file size may have changed
+        cachedLength = nil
     }
 
-    func writeByte(byte: UInt8) {
+    public func writeByte(byte: UInt8) throws {
+        if isClosed {
+            throw SwiftIOError.streamClosed
+        }
         self.fileHandle.write(Data([byte]))
+        // Invalidate cache as file size may have changed
+        cachedLength = nil
     }
 }

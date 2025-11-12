@@ -1,4 +1,7 @@
-class UTF16Encoding : Encoding {
+public class UTF16Encoding : Encoding {
+    public override init() {
+        super.init()
+    }
 
     override func getByteCount(_ char: Character) -> Int {
         return 2

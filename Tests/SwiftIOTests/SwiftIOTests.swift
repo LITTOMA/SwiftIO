@@ -2,10 +2,10 @@ import XCTest
 @testable import SwiftIO
 
 final class SwiftIOTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(SwiftIO().text, "Hello, World!")
+    // Placeholder test file - actual tests are in specific test files
+    // (BinaryReaderTests, FileStreamTests, MemoryStreamTests, etc.)
+    func testModuleImports() throws {
+        // Verify that the module can be imported successfully
+        XCTAssertTrue(true)
     }
 }

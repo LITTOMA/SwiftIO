@@ -1,25 +1,31 @@
 import Foundation
 
-class MemoryStream: Stream {
-  var canRead: Bool {
+public class MemoryStream: Stream {
+  public var canRead: Bool {
     return !isClosed
   }
-  var canSeek: Bool {
+  public var canSeek: Bool {
     return !isClosed
   }
-  var canTimeout: Bool {
+  public var canTimeout: Bool {
     return !isClosed
   }
-  var canWrite: Bool {
+  public var canWrite: Bool {
     return !isClosed
   }
-  var length: Int64
-  var position: Int64
-  var readTimeout: Int32
-  var writeTimeout: Int32
+  public var length: Int
+  public var position: Int
+  public var readTimeout: Int
+  public var writeTimeout: Int
 
   private var bytes: Data
   private var isClosed: Bool = false
+  
+  deinit {
+    if !isClosed {
+      close()
+    }
+  }
 
   init() {
     self.bytes = Data()
@@ -31,7 +37,7 @@ class MemoryStream: Stream {
 
   init(bytes: Data) {
     self.bytes = bytes
-    self.length = Int64(bytes.count)
+    self.length = bytes.count
     self.position = 0
     self.readTimeout = 0
     self.writeTimeout = 0
@@ -39,63 +45,65 @@ class MemoryStream: Stream {
 
   init(bytes: [UInt8]) {
     self.bytes = Data(bytes)
-    self.length = Int64(bytes.count)
+    self.length = bytes.count
     self.position = 0
     self.readTimeout = 0
     self.writeTimeout = 0
   }
 
-  func close() {
+  public func close() {
     self.bytes = Data()
     self.length = 0
     self.position = 0
     self.isClosed = true
   }
 
-  func copyTo(destination: Stream) {
-    self.copyTo(destination: destination, bufferSize: 4096)
+  public func copyTo(destination: Stream) throws {
+    try self.copyTo(destination: destination, bufferSize: 4096)
   }
 
-  func copyTo(destination: Stream, bufferSize: Int32) {
-    var buffer = Data(count: Int(bufferSize))
-    var read: Int32 = 0
+  public func copyTo(destination: Stream, bufferSize: Int) throws {
+    var buffer = Data(count: bufferSize)
+    var read: Int = 0
     repeat {
-      read = self.read(buffer: &buffer, offset: 0, count: bufferSize)
+      read = try self.read(buffer: &buffer, offset: 0, count: bufferSize)
       if read > 0 {
-        destination.write(buffer: buffer, offset: 0, count: read)
+        try destination.write(buffer: buffer, offset: 0, count: read)
       }
     } while read > 0
   }
 
-  func copyToAsync(destination: Stream) async {
-    await self.copyToAsync(destination: destination, bufferSize: 4096)
+  public func copyToAsync(destination: Stream) async throws {
+    try await self.copyToAsync(destination: destination, bufferSize: 4096)
   }
 
-  func copyToAsync(destination: Stream, bufferSize: Int32) async {
-    var buffer = Data(count: Int(bufferSize))
-    var read: Int32 = 0
+  public func copyToAsync(destination: Stream, bufferSize: Int) async throws {
+    var buffer = Data(count: bufferSize)
+    var read: Int = 0
     repeat {
-      read = await self.readAsync(buffer: &buffer, offset: 0, count: bufferSize)
+      read = try await self.readAsync(buffer: &buffer, offset: 0, count: bufferSize)
       if read > 0 {
-        await destination.writeAsync(buffer: buffer, offset: 0, count: read)
+        try await destination.writeAsync(buffer: buffer, offset: 0, count: read)
       }
     } while read > 0
   }
 
-  func flush() {
+  public func flush() throws {
     // Do nothing
   }
 
-  func flushAsync() async {
+  public func flushAsync() async throws {
     // Do nothing
   }
 
-  func read(buffer: inout Data, offset: Int32, count: Int32) -> Int32 {
-    let count = Int(count)
-    let offset = Int(offset)
-    let length = Int(self.length)
-    let position = Int(self.position)
-    let remaining = length - position
+  public func read(buffer: inout Data, offset: Int, count: Int) throws -> Int {
+    if isClosed {
+      throw SwiftIOError.streamClosed
+    }
+    if offset < 0 || count < 0 || offset + count > buffer.count {
+      throw SwiftIOError.invalidOperation("Invalid offset or count: offset=\(offset), count=\(count), buffer.count=\(buffer.count)")
+    }
+    let remaining = self.length - self.position
     let read = min(count, remaining)
     if read > 0 {
       buffer.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in
@@ -103,46 +111,54 @@ class MemoryStream: Stream {
         let dest = base.advanced(by: offset)
         self.bytes.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) in
           let base = ptr.baseAddress!
-          let src = base.advanced(by: position)
+          let src = base.advanced(by: self.position)
           dest.copyMemory(from: src, byteCount: read)
         }
       }
-      self.position += Int64(read)
+      self.position += read
     }
-    return Int32(read)
+    return read
   }
 
-  func readAsync(buffer: inout Data, offset: Int32, count: Int32) async -> Int32 {
-    return self.read(buffer: &buffer, offset: offset, count: count)
+  public func readAsync(buffer: inout Data, offset: Int, count: Int) async throws -> Int {
+    return try self.read(buffer: &buffer, offset: offset, count: count)
   }
 
-  func readByte() -> UInt8 {
-    let position = Int(self.position)
-    let byte = self.bytes[position]
+  public func readByte() throws -> UInt8 {
+    if isClosed {
+      throw SwiftIOError.streamClosed
+    }
+    if self.position >= self.bytes.count {
+      throw SwiftIOError.endOfStream
+    }
+    let byte = self.bytes[self.position]
     self.position += 1
     return byte
   }
 
-  func seek(offset: Int64, origin: SeekOrigin) -> Int64 {
-    let length = Int64(self.length)
-    let position = Int64(self.position)
+  public func seek(offset: Int, origin: SeekOrigin) throws -> Int {
+    if isClosed {
+      throw SwiftIOError.streamClosed
+    }
     switch origin {
     case .begin:
       self.position = offset
     case .current:
-      self.position = position + offset
+      self.position += offset
     case .end:
-      self.position = length + offset
+      self.position = self.length + offset
     }
     return self.position
   }
 
-  func setLength(length: Int64) {
+  public func setLength(length: Int) throws {
+    if isClosed {
+      throw SwiftIOError.streamClosed
+    }
     if length < 0 {
-      fatalError("Invalid length")
+      throw SwiftIOError.invalidOperation("Invalid length: \(length)")
     }
 
-    let length = Int(length)
     let bytes = self.bytes
     let currentLength = bytes.count
     if length > currentLength {
@@ -152,7 +168,11 @@ class MemoryStream: Stream {
       self.bytes.removeLast(currentLength - length)
     }
 
-    self.length = Int64(self.bytes.count)
+    self.length = self.bytes.count
+    // Adjust position if it's beyond new length
+    if self.position > self.length {
+      self.position = self.length
+    }
   }
 
   func toArray() -> [UInt8] {
@@ -163,19 +183,18 @@ class MemoryStream: Stream {
     return self.bytes
   }
 
-  func write(buffer: Data, offset: Int32, count: Int32) {
+  public func write(buffer: Data, offset: Int, count: Int) throws {
     // writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
-    let count = Int(count)
-    let offset = Int(offset)
-    let length = Int(self.length)
-    let position = Int(self.position)
-
-    if offset < 0 || count < 0 || offset + count > buffer.count {
-      fatalError("Invalid offset or count")
+    if isClosed {
+      throw SwiftIOError.streamClosed
     }
 
-    if position + count > length {
-      self.setLength(length: Int64(position + count))
+    if offset < 0 || count < 0 || offset + count > buffer.count {
+      throw SwiftIOError.invalidOperation("Invalid offset or count: offset=\(offset), count=\(count), buffer.count=\(buffer.count)")
+    }
+
+    if self.position + count > self.length {
+      try self.setLength(length: self.position + count)
     }
 
     buffer.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) in
@@ -183,27 +202,29 @@ class MemoryStream: Stream {
       let src = base.advanced(by: offset)
       self.bytes.withUnsafeMutableBytes { (destPtr: UnsafeMutableRawBufferPointer) in
         let destBase = destPtr.baseAddress!
-        let dest = destBase.advanced(by: position)
+        let dest = destBase.advanced(by: self.position)
         dest.copyMemory(from: src, byteCount: count)
       }
     }
 
-    self.position += Int64(count)
-    self.length = Int64(self.bytes.count)
+    self.position += count
+    self.length = self.bytes.count
   }
 
-  func writeAsync(buffer: Data, offset: Int32, count: Int32) async {
-    self.write(buffer: buffer, offset: offset, count: count)
+  public func writeAsync(buffer: Data, offset: Int, count: Int) async throws {
+    try self.write(buffer: buffer, offset: offset, count: count)
   }
 
-  func writeByte(byte: UInt8) {
-    let position = Int(self.position)
-    if position >= self.bytes.count {
+  public func writeByte(byte: UInt8) throws {
+    if isClosed {
+      throw SwiftIOError.streamClosed
+    }
+    if self.position >= self.bytes.count {
       self.bytes.append(byte)
     } else {
-      self.bytes[position] = byte
+      self.bytes[self.position] = byte
     }
     self.position += 1
-    self.length = Int64(self.bytes.count)
+    self.length = self.bytes.count
   }
 }

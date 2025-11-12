@@ -1,79 +1,74 @@
  import Foundation
 
- class BinaryReader {
+ public class BinaryReader {
     private var stream: Stream
     private var isClosed: Bool = false
     private var endianess: Endianess = .little
     private var encoding: Encoding = ASCIIEncoding()
 
-    init(_ stream: Stream, encoding: Encoding = ASCIIEncoding(), endianess: Endianess = .little) {
+    public init(_ stream: Stream, encoding: Encoding? = nil, endianess: Endianess = .little) {
         self.stream = stream
-        self.encoding = encoding
+        self.encoding = encoding ?? ASCIIEncoding()
         self.endianess = endianess
     }
 
-    func close() {
+    public func close() {
         self.stream.close()
         self.isClosed = true
     }
 
-    func readByte() -> UInt8 {
-        var buffer = Data(count: 1)
-        let bytesRead = self.stream.read(buffer: &buffer, offset: 0, count: 1)
-        if bytesRead == 0 {
-            fatalError("End of stream")
-        }
-        return buffer[0]
+    public func readByte() throws -> UInt8 {
+        return try self.stream.readByte()
     }
 
-    func readBytes(_ count: Int) -> Data {
+    public func readBytes(_ count: Int) throws -> Data {
         var buffer = Data(count: count)
-        let bytesRead = self.stream.read(buffer: &buffer, offset: 0, count: Int32(count))
+        let bytesRead = try self.stream.read(buffer: &buffer, offset: 0, count: count)
         if bytesRead == 0 {
-            fatalError("End of stream")
+            throw SwiftIOError.endOfStream
         }
         return buffer
     }
 
-    func readChar(encoding: Encoding) -> Character {
+    public func readChar(encoding: Encoding) throws -> Character {
         // if stream reaches end, return null character
         if self.stream.position == self.stream.length {
             return "\0"
         }
 
         var maxBytes = encoding.getMaxByteCount(1)
-        if Int64(maxBytes) + self.stream.position > self.stream.length {
-            maxBytes = Int(self.stream.length - self.stream.position)
+        if maxBytes + self.stream.position > self.stream.length {
+            maxBytes = self.stream.length - self.stream.position
         }
 
-        let bytes = self.readBytes(maxBytes)
+        let bytes = try self.readBytes(maxBytes)
         let chars = encoding.getChars(Array(bytes))
         let char = chars[0]
-        self.stream.position -= Int64(bytes.count - encoding.getByteCount(char))
+        self.stream.position -= bytes.count - encoding.getByteCount(char)
         return char
     }
 
-    func readChar() -> Character {
-        return self.readChar(encoding: self.encoding)
+    public func readChar() throws -> Character {
+        return try self.readChar(encoding: self.encoding)
     }
 
-    func readChars(_ count: Int, encoding: Encoding) -> [Character] {
+    public func readChars(_ count: Int, encoding: Encoding) throws -> [Character] {
         var chars = [Character](repeating: " ", count: count)
         var charsRead = 0
         for i in 0..<count {
-            let char = self.readChar(encoding: encoding)
+            let char = try self.readChar(encoding: encoding)
             chars[i] = char
             charsRead += 1
         }
         return chars
     }
 
-    func readChars(_ count: Int) -> [Character] {
-        return self.readChars(count, encoding: self.encoding)
+    public func readChars(_ count: Int) throws -> [Character] {
+        return try self.readChars(count, encoding: self.encoding)
     }
 
-    func readInt16(endianess: Endianess) -> Int16 {
-        let buffer = self.readBytes(2)
+    public func readInt16(endianess: Endianess) throws -> Int16 {
+        let buffer = try self.readBytes(2)
         if endianess == Endianess.big {
             return BinaryPrimitives.readInt16BigEndian(from: buffer)
         } else {
@@ -81,12 +76,12 @@
         }
     }
 
-    func readInt16() -> Int16 {
-        return self.readInt16(endianess: self.endianess)
+    public func readInt16() throws -> Int16 {
+        return try self.readInt16(endianess: self.endianess)
     }
 
-    func readInt32(endianess: Endianess) -> Int32 {
-        let buffer = self.readBytes(4)
+    public func readInt32(endianess: Endianess) throws -> Int32 {
+        let buffer = try self.readBytes(4)
         if endianess == Endianess.big {
             return BinaryPrimitives.readInt32BigEndian(from: buffer)
         } else {
@@ -94,12 +89,12 @@
         }
     }
 
-    func readInt32() -> Int32 {
-        return self.readInt32(endianess: self.endianess)
+    public func readInt32() throws -> Int32 {
+        return try self.readInt32(endianess: self.endianess)
     }
 
-    func readInt64(endianess: Endianess) -> Int64 {
-        let buffer = self.readBytes(8)
+    public func readInt64(endianess: Endianess) throws -> Int64 {
+        let buffer = try self.readBytes(8)
         if endianess == Endianess.big {
             return BinaryPrimitives.readInt64BigEndian(from: buffer)
         } else {
@@ -107,12 +102,12 @@
         }
     }
 
-    func readInt64() -> Int64 {
-        return self.readInt64(endianess: self.endianess)
+    public func readInt64() throws -> Int64 {
+        return try self.readInt64(endianess: self.endianess)
     }
 
-    func readUInt16(endianess: Endianess) -> UInt16 {
-        let buffer = self.readBytes(2)
+    public func readUInt16(endianess: Endianess) throws -> UInt16 {
+        let buffer = try self.readBytes(2)
         if endianess == Endianess.big {
             return BinaryPrimitives.readUInt16BigEndian(from: buffer)
         } else {
@@ -120,12 +115,12 @@
         }
     }
 
-    func readUInt16() -> UInt16 {
-        return self.readUInt16(endianess: self.endianess)
+    public func readUInt16() throws -> UInt16 {
+        return try self.readUInt16(endianess: self.endianess)
     }
 
-    func readUInt32(endianess: Endianess) -> UInt32 {
-        let buffer = self.readBytes(4)
+    public func readUInt32(endianess: Endianess) throws -> UInt32 {
+        let buffer = try self.readBytes(4)
         if endianess == Endianess.big {
             return BinaryPrimitives.readUInt32BigEndian(from: buffer)
         } else {
@@ -133,12 +128,12 @@
         }
     }
 
-    func readUInt32() -> UInt32 {
-        return self.readUInt32(endianess: self.endianess)
+    public func readUInt32() throws -> UInt32 {
+        return try self.readUInt32(endianess: self.endianess)
     }
 
-    func readUInt64(endianess: Endianess) -> UInt64 {
-        let buffer = self.readBytes(8)
+    public func readUInt64(endianess: Endianess) throws -> UInt64 {
+        let buffer = try self.readBytes(8)
         if endianess == Endianess.big {
             return BinaryPrimitives.readUInt64BigEndian(from: buffer)
         } else {
@@ -146,25 +141,25 @@
         }
     }
 
-    func readUInt64() -> UInt64 {
-        return self.readUInt64(endianess: self.endianess)
+    public func readUInt64() throws -> UInt64 {
+        return try self.readUInt64(endianess: self.endianess)
     }
 
-    func readString(_ count: Int, encoding: Encoding) -> String {
-        let chars = self.readChars(count, encoding: encoding)
+    public func readString(_ count: Int, encoding: Encoding) throws -> String {
+        let chars = try self.readChars(count, encoding: encoding)
         return String(chars)
     }
 
-    func readString(_ count: Int) -> String {
-        return self.readString(count, encoding: self.encoding)
+    public func readString(_ count: Int) throws -> String {
+        return try self.readString(count, encoding: self.encoding)
     }
 
-    func readString(format: BinaryStringFormat, encoding: Encoding) -> String {
+    public func readString(format: BinaryStringFormat, encoding: Encoding) throws -> String {
         switch format {
         case .zeroTerminated:
             var chars: [Character] = []
             while true {
-                let c = self.readChar(encoding: encoding)
+                let c = try self.readChar(encoding: encoding)
                 if c == "\0" {
                     break
                 }
@@ -172,34 +167,223 @@
             }
             return String(chars)
         case .bytePrefixLength:
-            let length = Int(self.readByte())
-            return self.readString(length, encoding: encoding)
+            let length = Int(try self.readByte())
+            return try self.readString(length, encoding: encoding)
         case .uint16PrefixLength:
-            let length = Int(self.readUInt16())
-            return self.readString(length, encoding: encoding)
+            let length = Int(try self.readUInt16())
+            return try self.readString(length, encoding: encoding)
         case .uint32PrefixLength:
-            let length = Int(self.readUInt32())
-            return self.readString(length, encoding: encoding)
+            let length = Int(try self.readUInt32())
+            return try self.readString(length, encoding: encoding)
         case .uint64PrefixLength:
-            let length = Int(self.readUInt64())
-            return self.readString(length, encoding: encoding)
+            let length = Int(try self.readUInt64())
+            return try self.readString(length, encoding: encoding)
         }
     }
 
-    func readString(format: BinaryStringFormat) -> String {
-        return self.readString(format: format, encoding: self.encoding)
+    public func readString(format: BinaryStringFormat) throws -> String {
+        return try self.readString(format: format, encoding: self.encoding)
     }
 
-    func readToEnd() -> Data {
+    public func readToEnd() throws -> Data {
         var buffer = Data()
         while true {
             var chunk = Data(count: 4096)
-            let bytesRead = self.stream.read(buffer: &chunk, offset: 0, count: 4096)
+            let bytesRead = try self.stream.read(buffer: &chunk, offset: 0, count: 4096)
             if bytesRead == 0 {
                 break
             }
             buffer.append(chunk)
         }
         return buffer
+    }
+    
+    // MARK: - Result callback versions
+    
+    public func readByte(completion: @escaping (Result<UInt8, SwiftIOError>) -> Void) {
+        do {
+            let result = try readByte()
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readBytes(_ count: Int, completion: @escaping (Result<Data, SwiftIOError>) -> Void) {
+        do {
+            let result = try readBytes(count)
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readInt16(completion: @escaping (Result<Int16, SwiftIOError>) -> Void) {
+        do {
+            let result = try readInt16()
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readInt32(completion: @escaping (Result<Int32, SwiftIOError>) -> Void) {
+        do {
+            let result = try readInt32()
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readInt64(completion: @escaping (Result<Int64, SwiftIOError>) -> Void) {
+        do {
+            let result = try readInt64()
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readString(_ count: Int, completion: @escaping (Result<String, SwiftIOError>) -> Void) {
+        do {
+            let result = try readString(count)
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readChar(completion: @escaping (Result<Character, SwiftIOError>) -> Void) {
+        do {
+            let result = try readChar()
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readChar(encoding: Encoding, completion: @escaping (Result<Character, SwiftIOError>) -> Void) {
+        do {
+            let result = try readChar(encoding: encoding)
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readChars(_ count: Int, completion: @escaping (Result<[Character], SwiftIOError>) -> Void) {
+        do {
+            let result = try readChars(count)
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readChars(_ count: Int, encoding: Encoding, completion: @escaping (Result<[Character], SwiftIOError>) -> Void) {
+        do {
+            let result = try readChars(count, encoding: encoding)
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readUInt16(completion: @escaping (Result<UInt16, SwiftIOError>) -> Void) {
+        do {
+            let result = try readUInt16()
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readUInt32(completion: @escaping (Result<UInt32, SwiftIOError>) -> Void) {
+        do {
+            let result = try readUInt32()
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readUInt64(completion: @escaping (Result<UInt64, SwiftIOError>) -> Void) {
+        do {
+            let result = try readUInt64()
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readString(format: BinaryStringFormat, completion: @escaping (Result<String, SwiftIOError>) -> Void) {
+        do {
+            let result = try readString(format: format)
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readString(format: BinaryStringFormat, encoding: Encoding, completion: @escaping (Result<String, SwiftIOError>) -> Void) {
+        do {
+            let result = try readString(format: format, encoding: encoding)
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readString(_ count: Int, encoding: Encoding, completion: @escaping (Result<String, SwiftIOError>) -> Void) {
+        do {
+            let result = try readString(count, encoding: encoding)
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
+    }
+    
+    public func readToEnd(completion: @escaping (Result<Data, SwiftIOError>) -> Void) {
+        do {
+            let result = try readToEnd()
+            completion(.success(result))
+        } catch let error as SwiftIOError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.invalidOperation("Unknown error: \(error)")))
+        }
     }
 }

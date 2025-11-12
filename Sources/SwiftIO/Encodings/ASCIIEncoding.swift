@@ -1,4 +1,7 @@
-class ASCIIEncoding: Encoding {
+public class ASCIIEncoding: Encoding {
+    public override init() {
+        super.init()
+    }
     override func getByteCount(_ char: Character) -> Int {
         return 1
     }

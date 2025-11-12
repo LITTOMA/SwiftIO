@@ -1,4 +1,7 @@
-class UTF8Encoding: Encoding {
+public class UTF8Encoding: Encoding {
+    public override init() {
+        super.init()
+    }
     override func getByteCount(_ char: Character) -> Int {
         var byteCount = 0
         if char <= "\u{7F}" {
